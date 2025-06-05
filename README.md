@@ -6,7 +6,8 @@
 
 ## What's This?
 
-My Camera History is an application that allows you to view the cameras you have used over time at a glance and beautifully. **Everything happens right in your browser with no servers involved, your photos and data stay with you, and there's no tracking or analytics.**
+My Camera History is an application that allows you to view the cameras you have used over time at a glance and beautifully. 
+**Everything happens right in your browser with no servers involved, your photos and data stay with you, and there's no tracking or analytics.**
 
 ### [Try My Camera History in Web Browser](https://newboon.github.io/my-camera-history/)
 
