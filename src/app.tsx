@@ -36,7 +36,7 @@ export const App = () => {
           <p>{t('footer.privacy')}</p>
           <p className="space-x-1">
             <a
-              href="https://github.com/Gumball12/snap-scope/"
+              href="https://github.com/newboon/my-camera-history/"
               target="_blank"
               className="underline"
             >
