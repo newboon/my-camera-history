@@ -230,12 +230,24 @@ export const FileUploader = () => {
 
 const checkExifSupport = async (file: File): Promise<boolean> => {
   try {
-    const data = (await parse(file, {
-      pick: ['FocalLengthIn35mmFormat'],
-    })) as { FocalLengthIn35mmFormat: number };
+    // Check for essential EXIF fields that most cameras should have
+    const data = await parse(file, {
+      pick: ['Make', 'Model', 'DateTimeOriginal', 'DateTime', 'DateTimeDigitized', 'FocalLength', 'FocalLengthIn35mmFormat', 'ExifVersion'],
+    });
 
-    return data?.FocalLengthIn35mmFormat !== undefined;
+    // Return true if any of these essential fields exist
+    return !!(data && (
+      data.Make || 
+      data.Model || 
+      data.DateTimeOriginal || 
+      data.DateTime || 
+      data.DateTimeDigitized ||
+      data.FocalLength ||
+      data.FocalLengthIn35mmFormat ||
+      data.ExifVersion
+    ));
   } catch (error) {
+    console.warn(`EXIF parsing failed for ${file.name}:`, error);
     return false;
   }
 };

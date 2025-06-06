@@ -39,11 +39,16 @@ export const FileProvider = ({ children }: { children: ReactNode }) => {
 
     for (const file of newFiles) {
       try {
-        const exif = await exifr.parse(file, ['Make', 'Model', 'DateTimeOriginal', 'LensMake', 'LensModel']); // Added 'LensMake'
-        if (exif && exif.Model && exif.DateTimeOriginal) {
+        const exif = await exifr.parse(file, ['Make', 'Model', 'DateTimeOriginal', 'DateTime', 'DateTimeDigitized', 'LensMake', 'LensModel']);
+        
+        // More flexible condition: require either Model or Make, and any date field
+        const hasModel = exif && (exif.Model || exif.Make);
+        const dateTime = exif?.DateTimeOriginal || exif?.DateTime || exif?.DateTimeDigitized;
+        
+        if (hasModel && dateTime) {
           const make = exif.Make ? exif.Make.trim() : undefined;
-          const model = exif.Model.trim();
-          const date = new Date(exif.DateTimeOriginal).toISOString().split('T')[0];
+          const model = exif.Model ? exif.Model.trim() : (make || 'Unknown Camera');
+          const date = new Date(dateTime).toISOString().split('T')[0];
           let lensMake = exif.LensMake ? exif.LensMake.trim() : undefined;
           const lensModel = exif.LensModel ? exif.LensModel.trim() : 'Unknown Lens';
 
