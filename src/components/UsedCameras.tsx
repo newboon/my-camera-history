@@ -27,7 +27,7 @@ export const UsedCameras: React.FC = () => {
   // Ensure cameraUsageData is always an array (e.g., initialized as [] in useFiles context)
   const visibleCameras = React.useMemo(() => {
     return cameraUsageData
-      .filter(camera => !camera.isExcluded)
+      .filter(camera => !camera.isExcluded && (camera.photoCount || 0) >= 20)
       .sort((a, b) => {
         const dateA = a.endDate ? new Date(a.endDate).getTime() : 0;
         const dateB = b.endDate ? new Date(b.endDate).getTime() : 0;
@@ -294,7 +294,8 @@ const brandColors: Record<string, string> = {
   'fujifilm': '#01916d',
   'panasonic': '#0041C0',
   'leica': '#E20612',
-  'olympus': '#08107B'
+  'olympus': '#08107B',
+  'samsung': '#1428A0'
 };
 
 const getBrandColor = (make: string | undefined, model?: string): string => {
