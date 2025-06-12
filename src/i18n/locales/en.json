@@ -64,6 +64,11 @@
     "noDataForChart": "No camera data available for chart.",
     "useSingleColor": "Use Single Color",
     "useMultipleColors": "Use Multiple Colors",
+    "colorMode": {
+      "multipleColors": "Multiple Colors",
+      "singleColor": "Single Color",
+      "brandColors": "Brand Colors"
+    },
     "captureButton": "Capture",
     "photosByYearTitle": "Photo Count by Year",
     "photoCount": "Photo Count"

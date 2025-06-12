@@ -17,7 +17,7 @@ export const UsedCameras: React.FC = () => {
   
 
 
-  const [useMultipleColors, setUseMultipleColors] = React.useState(true); // State for color mode
+  const [colorMode, setColorMode] = React.useState<'multiple' | 'single' | 'brand'>('multiple');
   const { t, i18n } = useTranslation();
   const { cameraUsageData, setCameraUsageData, isLoadingExif } = useFiles();
 
@@ -37,13 +37,18 @@ export const UsedCameras: React.FC = () => {
 
   const excludedCameras = cameraUsageData.filter(camera => camera.isExcluded);
 
-  // Helper function to format camera name, avoiding duplication for NIKON
+  // Helper function to format camera name, avoiding duplication for NIKON and Canon
   const formatCameraName = React.useCallback((make: string | undefined, model: string) => {
     const makeStr = make || '';
     const modelStr = model || '';
     
     // If make contains "NIKON" and model also starts with "NIKON", show only model
     if (makeStr.toUpperCase().includes('NIKON') && modelStr.toUpperCase().startsWith('NIKON')) {
+      return modelStr.trim();
+    }
+    
+    // If make contains "CANON" and model also starts with "CANON", show only model
+    if (makeStr.toUpperCase().includes('CANON') && modelStr.toUpperCase().startsWith('CANON')) {
       return modelStr.trim();
     }
     
@@ -281,6 +286,46 @@ const cameraColors = [
 ];
 const defaultBarColor = '#8884d8'; // Default single color (light indigo/purple)
 
+// Brand color mapping
+const brandColors: Record<string, string> = {
+  'sony': '#ff6600',
+  'nikon': '#FFE100',
+  'canon': '#CC0000',
+  'fujifilm': '#01916d',
+  'panasonic': '#0041C0',
+  'leica': '#E20612',
+  'olympus': '#08107B'
+};
+
+const getBrandColor = (make: string | undefined, model?: string): string => {
+  // First try to get color from make
+  if (make) {
+    const normalizedMake = make.toLowerCase();
+    // Check for exact match first
+    if (brandColors[normalizedMake]) {
+      return brandColors[normalizedMake];
+    }
+    // Check for partial match in make
+    for (const brand in brandColors) {
+      if (normalizedMake.includes(brand)) {
+        return brandColors[brand];
+      }
+    }
+  }
+  
+  // If make is not available or not found, try to extract brand from model
+  if (model) {
+    const normalizedModel = model.toLowerCase();
+    for (const brand in brandColors) {
+      if (normalizedModel.includes(brand)) {
+        return brandColors[brand];
+      }
+    }
+  }
+  
+  return defaultBarColor;
+};
+
 const chartData = React.useMemo(() => {
     return visibleCameras.map(cam => {
       const name = formatCameraName(cam.make, cam.model);
@@ -307,15 +352,24 @@ const chartData = React.useMemo(() => {
         eTime = null;
       }
 
+      let fillColor;
+      if (colorMode === 'multiple') {
+        fillColor = cameraColors[visibleCameras.findIndex(c => formatCameraName(c.make, c.model) === name) % cameraColors.length];
+      } else if (colorMode === 'brand') {
+        fillColor = getBrandColor(cam.make, cam.model);
+      } else {
+        fillColor = defaultBarColor;
+      }
+
       return {
         name,
         range: [sTime, eTime],
         originalStartDate,
         originalEndDate,
-        fill: useMultipleColors ? cameraColors[visibleCameras.findIndex(c => formatCameraName(c.make, c.model) === name) % cameraColors.length] : defaultBarColor,
+        fill: fillColor,
       };
     }).filter(item => item.range[0] !== null && item.range[1] !== null);
-  }, [visibleCameras, MIN_DURATION_MS, useMultipleColors, formatCameraName]);
+  }, [visibleCameras, MIN_DURATION_MS, colorMode, formatCameraName]);
 
   const photosByYearForVisibleCameras = React.useMemo(() => {
     const yearlyCounts: Record<number, number> = {};
@@ -368,8 +422,8 @@ const chartData = React.useMemo(() => {
 
   return (
     <section className="space-y-6">
-      {/* Input field for custom title */}     
-      <div className="w-full max-w-4xl mx-auto flex justify-start mb-2">
+      {/* Input field for custom title and color mode radio buttons */}     
+      <div className="w-full max-w-4xl mx-auto flex justify-between items-center mb-2">
         <div className="flex items-center">
           <input
             type="text"
@@ -379,6 +433,47 @@ const chartData = React.useMemo(() => {
             className="px-4 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8884d8] focus:border-[#8884d8] mr-2"
             style={{backgroundColor: '#e7ebfe'}}
           />
+        </div>
+        <div className="flex items-center gap-4">
+          <label className="flex items-center">
+            <input
+              type="radio"
+              name="colorMode"
+              value="multiple"
+              checked={colorMode === 'multiple'}
+              onChange={() => {
+                setColorMode('multiple');
+              }}
+              className="mr-2"
+            />
+            <span className="text-sm text-gray-700">{t('usedCameras.colorMode.multipleColors', '다중 색상')}</span>
+          </label>
+          <label className="flex items-center">
+            <input
+              type="radio"
+              name="colorMode"
+              value="single"
+              checked={colorMode === 'single'}
+              onChange={() => {
+                setColorMode('single');
+              }}
+              className="mr-2"
+            />
+            <span className="text-sm text-gray-700">{t('usedCameras.colorMode.singleColor', '단일 색상')}</span>
+          </label>
+          <label className="flex items-center">
+            <input
+              type="radio"
+              name="colorMode"
+              value="brand"
+              checked={colorMode === 'brand'}
+              onChange={() => {
+                setColorMode('brand');
+              }}
+              className="mr-2"
+            />
+            <span className="text-sm text-gray-700">{t('usedCameras.colorMode.brandColors', '브랜드 색상')}</span>
+          </label>
         </div>
       </div>
 
@@ -390,12 +485,6 @@ const chartData = React.useMemo(() => {
               {customTitle ? `${customTitle}'s Camera History` : t('usedCameras.myCamerasTitle')}
             </h2>
             <div className="flex gap-2 items-center">
-              <button 
-                onClick={() => setUseMultipleColors(!useMultipleColors)}
-                className={`px-4 py-2 text-sm font-medium text-white rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors ${useMultipleColors ? 'bg-[#8884d8] hover:bg-[#706cc4] focus:ring-[#8884d8]' : 'bg-gray-400 hover:bg-gray-500 focus:ring-gray-500'}`}
-              >
-                {t('usedCameras.useMultipleColors')}
-              </button>
               <button 
                 onClick={captureChart}
                 className="px-4 py-2 text-sm font-medium text-white bg-[#8884d8] hover:bg-[#706cc4] rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#8884d8] transition-colors"
@@ -460,8 +549,8 @@ const chartData = React.useMemo(() => {
                 }}
               />
               {/* <Legend wrapperStyle={{ fontSize: '12px' }} /> */}{/* Smaller font for Legend - Legend removed as per request */}
-              <Bar dataKey="range" fill={useMultipleColors ? undefined : defaultBarColor}>
-                {useMultipleColors && chartData.map((entry, index) => (
+              <Bar dataKey="range" fill={colorMode === 'single' ? defaultBarColor : undefined}>
+                {colorMode !== 'single' && chartData.map((entry, index) => (
                   <Bar key={`bar-${index}`} dataKey="range" fill={entry.fill} />
                 ))}
               </Bar>
@@ -480,7 +569,7 @@ const chartData = React.useMemo(() => {
         {visibleCameras.length > 0 ? (
           <ul className="space-y-3">
             {visibleCameras.map((camera, index) => (
-              <li key={`${camera.make || ''}-${camera.model}`} className="p-3 border border-gray-200 rounded-lg shadow-md bg-white bg-opacity-40 backdrop-filter backdrop-blur-md" style={{ borderLeft: useMultipleColors ? `5px solid ${cameraColors[index % cameraColors.length]}` : `5px solid ${defaultBarColor}` }}> {/* Enhanced panel style for details items */}
+              <li key={`${camera.make || ''}-${camera.model}`} className="p-3 border border-gray-200 rounded-lg shadow-md bg-white bg-opacity-40 backdrop-filter backdrop-blur-md" style={{ borderLeft: colorMode === 'multiple' ? `5px solid ${cameraColors[index % cameraColors.length]}` : colorMode === 'brand' ? `5px solid ${getBrandColor(camera.make, camera.model)}` : `5px solid ${defaultBarColor}` }}> {/* Enhanced panel style for details items */}
                 <div className="flex justify-between items-center">
                   <span className="font-semibold text-gray-700">{formatCameraName(camera.make, camera.model)}</span>
                   <button

@@ -64,6 +64,11 @@
     "noDataForChart": "차트에 표시할 카메라 데이터가 없습니다.",
     "useSingleColor": "단일 색상",
     "useMultipleColors": "다중 색상",
+    "colorMode": {
+      "multipleColors": "다중 색상",
+      "singleColor": "단일 색상",
+      "brandColors": "브랜드 색상"
+    },
     "captureButton": "캡처",
     "photosByYearTitle": "Photo Count by Year",
     "photoCount": "사진 수"
