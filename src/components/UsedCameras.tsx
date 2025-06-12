@@ -295,7 +295,8 @@ const brandColors: Record<string, string> = {
   'panasonic': '#0041C0',
   'leica': '#E20612',
   'olympus': '#08107B',
-  'samsung': '#1428A0'
+  'samsung': '#1428A0',
+  'pentax': '#FF0013'
 };
 
 const getBrandColor = (make: string | undefined, model?: string): string => {
