@@ -93,11 +93,30 @@ export const FileUploader = () => {
         const dirEntry = entry as FileSystemDirectoryEntry;
         const dirReader = dirEntry.createReader();
 
-        const entries = await new Promise<FileSystemEntry[]>(resolve => {
-          dirReader.readEntries(entries => resolve(entries));
-        });
+        const allEntries: FileSystemEntry[] = [];
+        
+        // readEntries는 한 번에 최대 100개만 반환하므로 반복 호출 필요
+        const readAllEntries = async (): Promise<void> => {
+          return new Promise<void>((resolve, reject) => {
+            dirReader.readEntries(
+              entries => {
+                if (entries.length > 0) {
+                  allEntries.push(...entries);
+                  // 더 많은 파일이 있을 수 있으므로 재귀 호출
+                  readAllEntries().then(resolve).catch(reject);
+                } else {
+                  // 빈 배열이 반환되면 모든 파일을 읽은 것
+                  resolve();
+                }
+              },
+              error => reject(error)
+            );
+          });
+        };
 
-        const filePromises: Promise<File[]>[] = entries.map(entry =>
+        await readAllEntries();
+
+        const filePromises: Promise<File[]>[] = allEntries.map(entry =>
           processEntry(entry),
         );
         const fileArrays = await Promise.all(filePromises);
